@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app= express();
 const port = process.env.PORT || 5000;
 
@@ -47,9 +47,25 @@ async function run() {
           const result = await trainersCollection.insertOne(applicant);
           res.send(result);
       })
+
       app.get('/appliedTrainer',async(req, res)=>{
         const query={status: 'Pending'}
         const result =await trainersCollection.find(query).toArray();
+        res.send(result);
+      })
+
+      app.put('/confirm/:id',async (req, res) => {
+        const id = req.params.id;
+        const filter = { _id: new ObjectId(id) };
+        const options = { upsert: true };
+        const updated=req.body;
+        const updatedUser = {
+          $set: {
+            status: updated.status,
+            roll: updated.roll
+          }
+        }
+        const result = await trainersCollection.updateOne(filter, updatedUser,options);
         res.send(result);
       })
     // Send a ping to confirm a successful connection
