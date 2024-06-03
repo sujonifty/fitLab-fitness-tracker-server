@@ -42,8 +42,14 @@ async function run() {
       })
 
       //trainers related api
-      app.get('/trainers',async(req, res)=>{
-        const result =await trainersCollection.find().toArray();
+      app.post('/appliedTrainer', async(req, res)=>{
+        const applicant = req.body;
+          const result = await trainersCollection.insertOne(applicant);
+          res.send(result);
+      })
+      app.get('/appliedTrainer',async(req, res)=>{
+        const query={status: 'Pending'}
+        const result =await trainersCollection.find(query).toArray();
         res.send(result);
       })
     // Send a ping to confirm a successful connection
