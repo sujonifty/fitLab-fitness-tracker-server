@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-const app= express();
+const app = express();
 const port = process.env.PORT || 5000;
 
 //middleware
@@ -29,47 +29,53 @@ async function run() {
 
 
     //user related api
-    app.post('/users', async(req, res)=>{
-        const user = req.body;
-        //insert email if user doesn't exist
-        const query= {email: user.email};
-        const existedUser= await usersCollection.findOne(query);
-        if(existedUser){
-          return res.send({message:'user already existed', insertedId: null});
+    app.post('/users', async (req, res) => {
+      const user = req.body;
+      //insert email if user doesn't exist
+      const query = { email: user.email };
+      const existedUser = await usersCollection.findOne(query);
+      if (existedUser) {
+        return res.send({ message: 'user already existed', insertedId: null });
+      }
+      const result = await usersCollection.insertOne(user);
+      res.send(result);
+    })
+
+    //trainers related api
+    app.post('/appliedTrainer', async (req, res) => {
+      const applicant = req.body;
+      const result = await trainersCollection.insertOne(applicant);
+      res.send(result);
+    })
+
+    app.get('/allTrainer', async (req, res) => {
+      const query = { status: 'Confirm' }
+      const result = await trainersCollection.find(query).toArray();
+      res.send(result);
+    })
+    app.get('/appliedTrainer', async (req, res) => {
+      const query = { status: 'Pending' }
+      const result = await trainersCollection.find(query).toArray();
+      res.send(result);
+    })
+
+    app.put('/confirm/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const updated = req.body;
+      const updatedUser = {
+        $set: {
+          status: updated.status,
+          roll: updated.roll
         }
-          const result = await usersCollection.insertOne(user);
-          res.send(result);
-      })
-
-      //trainers related api
-      app.post('/appliedTrainer', async(req, res)=>{
-        const applicant = req.body;
-          const result = await trainersCollection.insertOne(applicant);
-          res.send(result);
-      })
-
-      app.get('/appliedTrainer',async(req, res)=>{
-        const query={status: 'Pending'}
-        const result =await trainersCollection.find(query).toArray();
-        res.send(result);
-      })
-
-      app.put('/confirm/:id',async (req, res) => {
-        const id = req.params.id;
-        const filter = { _id: new ObjectId(id) };
-        const options = { upsert: true };
-        const updated=req.body;
-        const updatedUser = {
-          $set: {
-            status: updated.status,
-            roll: updated.roll
-          }
-        }
-        const result = await trainersCollection.updateOne(filter, updatedUser,options);
-        res.send(result);
-      })
-    // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+      }
+      const result = await trainersCollection.updateOne(filter, updatedUser, options);
+      res.send(result);
+    })
+    
+      // Send a ping to confirm a successful connection
+      await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
@@ -79,9 +85,9 @@ async function run() {
 run().catch(console.dir);
 
 
-app.get('/', (req, res)=>{
-    res.send('Fitlab is running.');
+app.get('/', (req, res) => {
+  res.send('Fitlab is running.');
 })
-app.listen(port, ()=>{
-    console.log('FitLab is running on port:',port);
+app.listen(port, () => {
+  console.log('FitLab is running on port:', port);
 })
