@@ -26,6 +26,7 @@ async function run() {
   try {
     const usersCollection = client.db('FitnessDB').collection('users');
     const trainersCollection = client.db('FitnessDB').collection('trainers');
+    const classCollection = client.db('FitnessDB').collection('class');
 
 
     //user related api
@@ -38,6 +39,13 @@ async function run() {
         return res.send({ message: 'user already existed', insertedId: null });
       }
       const result = await usersCollection.insertOne(user);
+      res.send(result);
+    })
+
+    //class related api
+    app.post('/addClasses', async (req, res) => {
+      const addClass = req.body;
+      const result = await classCollection.insertOne(addClass);
       res.send(result);
     })
 
@@ -73,7 +81,22 @@ async function run() {
       const result = await trainersCollection.updateOne(filter, updatedUser, options);
       res.send(result);
     })
-    
+    app.put('/reject/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const rejectedInfo = req.body;
+      const updatedUser = {
+        $set: {
+          status: rejectedInfo.status,
+          roll: rejectedInfo.roll,
+          feedback: rejectedInfo.feedback
+        }
+      }
+      const result = await trainersCollection.updateOne(filter, updatedUser, options);
+      res.send(result);
+    })
+
       // Send a ping to confirm a successful connection
       await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
