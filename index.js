@@ -42,31 +42,45 @@ async function run() {
       res.send(result);
     })
 
-    //class related api
+    // ####### collection: "class" related api ######
     app.post('/addClasses', async (req, res) => {
       const addClass = req.body;
       const result = await classCollection.insertOne(addClass);
       res.send(result);
     })
 
-    //trainers related api
+    app.get('/allClasses', async (req, res) => {
+      const result = await classCollection.find().toArray();
+      res.send(result);
+    })
+
+    // ####### collection: "trainers" related api ######
+
+    // ********start admin related api******** 
     app.post('/appliedTrainer', async (req, res) => {
       const applicant = req.body;
       const result = await trainersCollection.insertOne(applicant);
       res.send(result);
     })
 
-    app.get('/allTrainer', async (req, res) => {
-      const query = { status: 'Confirm' }
-      const result = await trainersCollection.find(query).toArray();
-      res.send(result);
-    })
+    
     app.get('/appliedTrainer', async (req, res) => {
       const query = { status: 'Pending' }
       const result = await trainersCollection.find(query).toArray();
       res.send(result);
     })
+    
 
+    app.get('/allTrainer', async (req, res) => {
+      const query = { status: 'Confirm' }
+      const result = await trainersCollection.find(query).toArray();
+      res.send(result);
+    })
+    app.get('/trainers', async (req, res) => {
+      const query = { roll: 'Trainer' }
+      const result = await trainersCollection.find(query).toArray();
+      res.send(result);
+    })
     app.put('/confirm/:id', async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
@@ -96,6 +110,7 @@ async function run() {
       const result = await trainersCollection.updateOne(filter, updatedUser, options);
       res.send(result);
     })
+    // ********end admin related api********
 
       // Send a ping to confirm a successful connection
       await client.db("admin").command({ ping: 1 });
