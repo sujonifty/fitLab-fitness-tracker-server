@@ -27,6 +27,7 @@ async function run() {
     const usersCollection = client.db('FitnessDB').collection('users');
     const allUsersCollection = client.db('FitnessDB').collection('allUsers');
     const classCollection = client.db('FitnessDB').collection('class');
+    const slotsCollection = client.db('FitnessDB').collection('slots');
 
 
     //user related api
@@ -46,6 +47,8 @@ async function run() {
       const result = await usersCollection.find(query).toArray();
       res.send(result);
     })
+
+   
 
     // ####### collection: "class" related api ######
     app.post('/addClasses', async (req, res) => {
@@ -86,11 +89,17 @@ async function run() {
       const result = await allUsersCollection.find(query).toArray();
       res.send(result);
     })
+    
     // for add slot section 
     app.get('/trainer/:email', async (req, res) => {
       const userEmail= req.params.email
       const query = { email: userEmail, roll: 'Trainer' }
       const result = await allUsersCollection.findOne(query);
+      res.send(result);
+    })
+     // for add slot section 
+    app.get('/classItem', async (req, res) => {
+      const result = await classCollection.find().toArray();
       res.send(result);
     })
     app.put('/confirm/:id', async (req, res) => {
@@ -120,6 +129,18 @@ async function run() {
         }
       }
       const result = await allUsersCollection.updateOne(filter, updatedUser, options);
+      res.send(result);
+    })
+    app.patch('/removeTrainer/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedUser = {
+        $set: {
+          status:'Removed trainer',
+          roll: 'member',
+        }
+      }
+      const result = await allUsersCollection.updateOne(filter, updatedUser);
       res.send(result);
     })
     // ********end admin related api********
