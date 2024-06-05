@@ -25,7 +25,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     const usersCollection = client.db('FitnessDB').collection('users');
-    const trainersCollection = client.db('FitnessDB').collection('trainers');
+    const allUsersCollection = client.db('FitnessDB').collection('allUsers');
     const classCollection = client.db('FitnessDB').collection('class');
 
 
@@ -41,6 +41,11 @@ async function run() {
       const result = await usersCollection.insertOne(user);
       res.send(result);
     })
+    app.get('/subscriber', async (req, res) => {
+      const query = { roll: 'subscriber' }
+      const result = await usersCollection.find(query).toArray();
+      res.send(result);
+    })
 
     // ####### collection: "class" related api ######
     app.post('/addClasses', async (req, res) => {
@@ -54,31 +59,38 @@ async function run() {
       res.send(result);
     })
 
-    // ####### collection: "trainers" related api ######
+    // ####### collection: "allUsers" related api ######
 
     // ********start admin related api******** 
     app.post('/appliedTrainer', async (req, res) => {
       const applicant = req.body;
-      const result = await trainersCollection.insertOne(applicant);
+      const result = await allUsersCollection.insertOne(applicant);
       res.send(result);
     })
 
     
     app.get('/appliedTrainer', async (req, res) => {
       const query = { status: 'Pending' }
-      const result = await trainersCollection.find(query).toArray();
+      const result = await allUsersCollection.find(query).toArray();
       res.send(result);
     })
     
 
     app.get('/allTrainer', async (req, res) => {
       const query = { status: 'Confirm' }
-      const result = await trainersCollection.find(query).toArray();
+      const result = await allUsersCollection.find(query).toArray();
       res.send(result);
     })
     app.get('/trainers', async (req, res) => {
       const query = { roll: 'Trainer' }
-      const result = await trainersCollection.find(query).toArray();
+      const result = await allUsersCollection.find(query).toArray();
+      res.send(result);
+    })
+    // for add slot section 
+    app.get('/trainer/:email', async (req, res) => {
+      const userEmail= req.params.email
+      const query = { email: userEmail, roll: 'Trainer' }
+      const result = await allUsersCollection.findOne(query);
       res.send(result);
     })
     app.put('/confirm/:id', async (req, res) => {
@@ -92,7 +104,7 @@ async function run() {
           roll: updated.roll
         }
       }
-      const result = await trainersCollection.updateOne(filter, updatedUser, options);
+      const result = await allUsersCollection.updateOne(filter, updatedUser, options);
       res.send(result);
     })
     app.put('/reject/:id', async (req, res) => {
@@ -107,7 +119,7 @@ async function run() {
           feedback: rejectedInfo.feedback
         }
       }
-      const result = await trainersCollection.updateOne(filter, updatedUser, options);
+      const result = await allUsersCollection.updateOne(filter, updatedUser, options);
       res.send(result);
     })
     // ********end admin related api********
