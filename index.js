@@ -63,18 +63,26 @@ async function run() {
     })
     app.post('/AddSlot', async (req, res) => {
       const slotInfo = req.body;
+      // const trainerEmail = req.query.trainerEmail;
+      // const trainerSlot = req.query.slot;
+      // //insert email if user doesn't exist
+      // const query = { email: trainerEmail, slotName:trainerSlot};
+      // const existedUser = await slotsCollection.findOne(query);
+      // if (existedUser) {
+      //   return res.send({ message: 'You already existed', insertedId: null });
+      // }
       const result = await slotsCollection.insertOne(slotInfo);
       res.send(result);
     })
     app.patch('/updatedTrainerInfo', async (req, res) => {
       const trainerInfo = req.body;
       const classes = req.query.classes;
-      console.log('classes',classes)//classes = cardio
+      console.log('classes',classes)
       console.log('trainerInfo',trainerInfo)
       const filter = { className: classes };
       const updatedUser = {
         $push: {
-          trainers: trainerInfo//here trainers=[], trainerInfo={name:suj,age:22}
+          trainers: trainerInfo
         }
       }
       const result = await classCollection.updateOne(filter, updatedUser);
@@ -83,6 +91,13 @@ async function run() {
     // ####### collection: "class" related api ######
     app.post('/addClasses', async (req, res) => {
       const addClass = req.body;
+      const adminClass= req.query.adminClass;
+      //insert email if user doesn't exist
+      const query = { className: adminClass };
+      const existedUser = await classCollection.findOne(query);
+      if (existedUser) {
+        return res.send({ message: 'Class already existed', insertedId: null });
+      }
       const result = await classCollection.insertOne(addClass);
       res.send(result);
     })
