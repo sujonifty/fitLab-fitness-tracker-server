@@ -48,8 +48,38 @@ async function run() {
       res.send(result);
     })
 
-   
+    // ####### collection: "slots" related api ######
+ 
+     app.get('/trainer/:email', async (req, res) => {
+      const userEmail= req.params.email
+      const query = { email: userEmail, roll: 'Trainer' }
+      const result = await allUsersCollection.findOne(query);
+      res.send(result);
+    })
 
+    app.get('/classItem', async (req, res) => {
+      const result = await classCollection.find().toArray();
+      res.send(result);
+    })
+    app.post('/AddSlot', async (req, res) => {
+      const slotInfo = req.body;
+      const result = await slotsCollection.insertOne(slotInfo);
+      res.send(result);
+    })
+    app.patch('/updatedTrainerInfo', async (req, res) => {
+      const trainerInfo = req.body;
+      const classes = req.query.classes;
+      console.log('classes',classes)//classes = cardio
+      console.log('trainerInfo',trainerInfo)
+      const filter = { className: classes };
+      const updatedUser = {
+        $push: {
+          trainers: trainerInfo//here trainers=[], trainerInfo={name:suj,age:22}
+        }
+      }
+      const result = await classCollection.updateOne(filter, updatedUser);
+      res.send(result);
+    })
     // ####### collection: "class" related api ######
     app.post('/addClasses', async (req, res) => {
       const addClass = req.body;
@@ -61,7 +91,17 @@ async function run() {
       const result = await classCollection.find().toArray();
       res.send(result);
     })
-
+    app.patch('/updatedClass/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedUser = {
+        $set: {
+          status:'Removed trainer',
+        }
+      }
+      const result = await allUsersCollection.updateOne(filter, updatedUser);
+      res.send(result);
+    })
     // ####### collection: "allUsers" related api ######
 
     // ********start admin related api******** 
@@ -71,7 +111,6 @@ async function run() {
       res.send(result);
     })
 
-    
     app.get('/appliedTrainer', async (req, res) => {
       const query = { status: 'Pending' }
       const result = await allUsersCollection.find(query).toArray();
@@ -90,18 +129,7 @@ async function run() {
       res.send(result);
     })
     
-    // for add slot section 
-    app.get('/trainer/:email', async (req, res) => {
-      const userEmail= req.params.email
-      const query = { email: userEmail, roll: 'Trainer' }
-      const result = await allUsersCollection.findOne(query);
-      res.send(result);
-    })
-     // for add slot section 
-    app.get('/classItem', async (req, res) => {
-      const result = await classCollection.find().toArray();
-      res.send(result);
-    })
+   
     app.put('/confirm/:id', async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
