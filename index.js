@@ -47,12 +47,7 @@ async function run() {
       const result = await usersCollection.find(query).toArray();
       res.send(result);
     })
-    app.get('/addPost', async (req, res) => {
-      const userEmail=req.query.user;
-      const query={email: userEmail}
-      const result = await usersCollection.findOne(query);
-      res.send(result);
-    })
+    
 
     // ####### collection: "forumPost" related api ######
 
@@ -209,7 +204,14 @@ async function run() {
       const result = await allUsersCollection.updateOne(filter, updatedUser);
       res.send(result);
     })
+    app.get('/addPost', async (req, res) => {
+      const userEmail=req.query.user;
+      const query={email: userEmail}
+      const result = await allUsersCollection.findOne(query);
+      res.send(result);
+    })
     // ********end admin related api********
+    // ******** forumPost related api********
 
       // Send a ping to confirm a successful connection
       await client.db("admin").command({ ping: 1 });
