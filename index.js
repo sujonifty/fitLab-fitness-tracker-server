@@ -28,6 +28,7 @@ async function run() {
     const allUsersCollection = client.db('FitnessDB').collection('allUsers');
     const classCollection = client.db('FitnessDB').collection('class');
     const slotsCollection = client.db('FitnessDB').collection('slots');
+    const forumCollection = client.db('FitnessDB').collection('forum');
 
 
     //user related api
@@ -212,6 +213,12 @@ async function run() {
     })
     // ********end admin related api********
     // ******** forumPost related api********
+    app.post('/addPost', async (req, res) => {
+      const applicant = req.body;
+      const result = await forumCollection.insertOne(applicant);
+      res.send(result);
+    })
+
 
       // Send a ping to confirm a successful connection
       await client.db("admin").command({ ping: 1 });
