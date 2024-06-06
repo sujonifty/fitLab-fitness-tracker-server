@@ -47,6 +47,16 @@ async function run() {
       const result = await usersCollection.find(query).toArray();
       res.send(result);
     })
+    app.get('/addPost', async (req, res) => {
+      const userEmail=req.query.user;
+      const query={email: userEmail}
+      const result = await usersCollection.findOne(query);
+      res.send(result);
+    })
+
+    // ####### collection: "forumPost" related api ######
+
+
 
     // ####### collection: "slots" related api ######
  
@@ -86,6 +96,19 @@ async function run() {
         }
       }
       const result = await classCollection.updateOne(filter, updatedUser);
+      res.send(result);
+    })
+
+    app.get('/manageSlot', async (req, res) => {
+      const trainerEmail = req.query.trainer;
+      const query={email:trainerEmail}
+      const result = await slotsCollection.find(query).toArray();
+      res.send(result);
+    })
+    app.delete('/slot/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await slotsCollection.deleteOne(query);
       res.send(result);
     })
     // ####### collection: "class" related api ######
