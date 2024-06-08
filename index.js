@@ -48,16 +48,16 @@ async function run() {
       const result = await usersCollection.find(query).toArray();
       res.send(result);
     })
-    
+
 
     // ####### collection: "forumPost" related api ######
 
 
 
     // ####### collection: "slots" related api ######
- 
-     app.get('/trainer/:email', async (req, res) => {
-      const userEmail= req.params.email
+
+    app.get('/trainer/:email', async (req, res) => {
+      const userEmail = req.params.email
       const query = { email: userEmail, roll: 'Trainer' }
       const result = await allUsersCollection.findOne(query);
       res.send(result);
@@ -83,8 +83,8 @@ async function run() {
     app.patch('/updatedTrainerInfo', async (req, res) => {
       const trainerInfo = req.body;
       const classes = req.query.classes;
-      console.log('classes',classes)
-      console.log('trainerInfo',trainerInfo)
+      // console.log('classes', classes)
+      // console.log('trainerInfo', trainerInfo)
       const filter = { className: classes };
       const updatedUser = {
         $push: {
@@ -97,7 +97,7 @@ async function run() {
 
     app.get('/manageSlot', async (req, res) => {
       const trainerEmail = req.query.trainer;
-      const query={email:trainerEmail}
+      const query = { email: trainerEmail }
       const result = await slotsCollection.find(query).toArray();
       res.send(result);
     })
@@ -107,10 +107,16 @@ async function run() {
       const result = await slotsCollection.deleteOne(query);
       res.send(result);
     })
+    app.get('/cardDetail', async (req, res) => {
+      const trainerEmail = req.query.trainer;
+      const query = { email: trainerEmail }
+      const result = await slotsCollection.find(query).toArray();
+      res.send(result);
+    })
     // ####### collection: "class" related api ######
     app.post('/addClasses', async (req, res) => {
       const addClass = req.body;
-      const adminClass= req.query.adminClass;
+      const adminClass = req.query.adminClass;
       //insert email if user doesn't exist
       const query = { className: adminClass };
       const existedUser = await classCollection.findOne(query);
@@ -130,7 +136,7 @@ async function run() {
       const filter = { _id: new ObjectId(id) };
       const updatedUser = {
         $set: {
-          status:'Removed trainer',
+          status: 'Removed trainer',
         }
       }
       const result = await allUsersCollection.updateOne(filter, updatedUser);
@@ -150,7 +156,7 @@ async function run() {
       const result = await allUsersCollection.find(query).toArray();
       res.send(result);
     })
-    
+
 
     app.get('/allTrainer', async (req, res) => {
       const query = { status: 'Confirm' }
@@ -162,8 +168,14 @@ async function run() {
       const result = await allUsersCollection.find(query).toArray();
       res.send(result);
     })
-    
-   
+    app.get('/trainerCard/:id', async (req, res) => {
+      const id = req.params.id;
+      // console.log(id)
+      const query = { _id: new ObjectId(id) };
+      const result = await allUsersCollection.findOne(query);
+      res.send(result);
+  })
+
     app.put('/confirm/:id', async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
@@ -198,7 +210,7 @@ async function run() {
       const filter = { _id: new ObjectId(id) };
       const updatedUser = {
         $set: {
-          status:'Removed trainer',
+          status: 'Removed trainer',
           roll: 'member',
         }
       }
@@ -206,34 +218,38 @@ async function run() {
       res.send(result);
     })
     app.get('/addPost', async (req, res) => {
-      const userEmail=req.query.user;
-      const query={email: userEmail}
+      const userEmail = req.query.user;
+      const query = { email: userEmail }
       const result = await allUsersCollection.findOne(query);
       res.send(result);
     })
     // ********end admin related api********
+
     // ******** forumPost related api********
     app.post('/addPost', async (req, res) => {
       const applicant = req.body;
       const result = await forumCollection.insertOne(applicant);
       res.send(result);
     })
-
+    app.get('/forum', async (req, res) => {
+      const result = await forumCollection.find().toArray();
+      res.send(result);
+    })
 
       // Send a ping to confirm a successful connection
       await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
-  } finally {
-    // Ensures that the client will close when you finish/error
-    // await client.close();
+      console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    } finally {
+      // Ensures that the client will close when you finish/error
+      // await client.close();
+    }
   }
-}
 run().catch(console.dir);
 
 
-app.get('/', (req, res) => {
-  res.send('Fitlab is running.');
-})
-app.listen(port, () => {
-  console.log('FitLab is running on port:', port);
-})
+  app.get('/', (req, res) => {
+    res.send('Fitlab is running.');
+  })
+  app.listen(port, () => {
+    console.log('FitLab is running on port:', port);
+  })
