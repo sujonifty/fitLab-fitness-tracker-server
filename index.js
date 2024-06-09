@@ -6,7 +6,15 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 //middleware
-app.use(cors());
+app.use(cors({
+  origin: [
+      "http://localhost:5173",
+      "http://localhost:5174",
+      "https://fitlab-d40a2.web.app",
+      "https://fitlab-d40a2.firebaseapp.com",
+  ],
+  credentials: true,
+}));
 app.use(express.json());
 
 
@@ -113,6 +121,13 @@ async function run() {
       const result = await slotsCollection.find(query).toArray();
       res.send(result);
     })
+    app.get('/slotBooking/:id', async (req, res) => {
+      const id = req.params.id;
+      // console.log(id)
+      const query = { _id: new ObjectId(id) };
+      const result = await slotsCollection.findOne(query);
+      res.send(result);
+  })
     // ####### collection: "class" related api ######
     app.post('/addClasses', async (req, res) => {
       const addClass = req.body;
@@ -168,10 +183,10 @@ async function run() {
       const result = await allUsersCollection.find(query).toArray();
       res.send(result);
     })
-    app.get('/trainerCard/:id', async (req, res) => {
-      const id = req.params.id;
+    app.get('/trainerCard/:email', async (req, res) => {
+      const userEmail = req.params.email;
       // console.log(id)
-      const query = { _id: new ObjectId(id) };
+      const query = { email: userEmail };
       const result = await allUsersCollection.findOne(query);
       res.send(result);
   })
