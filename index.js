@@ -37,6 +37,7 @@ async function run() {
     const classCollection = client.db('FitnessDB').collection('class');
     const slotsCollection = client.db('FitnessDB').collection('slots');
     const forumCollection = client.db('FitnessDB').collection('forum');
+    const subscriberCollection = client.db('FitnessDB').collection('subscriber');
 
 
     //user related api
@@ -250,7 +251,13 @@ async function run() {
       const result = await forumCollection.find().toArray();
       res.send(result);
     })
+// ************newsletter api ***************
 
+app.post('/newsletter', async (req, res) => {
+  const applicant = req.body;
+  const result = await subscriberCollection.insertOne(applicant);
+  res.send(result);
+})
       // Send a ping to confirm a successful connection
       await client.db("admin").command({ ping: 1 });
       console.log("Pinged your deployment. You successfully connected to MongoDB!");
