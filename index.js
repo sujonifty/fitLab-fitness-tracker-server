@@ -251,11 +251,27 @@ async function run() {
       const result = await forumCollection.find().toArray();
       res.send(result);
     })
+    app.get('/recentPosts', async (req, res) => {
+      const result = await forumCollection.find().sort({ postTime: 1 }).toArray();
+      res.send(result);
+    })
 // ************newsletter api ***************
 
 app.post('/newsletter', async (req, res) => {
   const applicant = req.body;
   const result = await subscriberCollection.insertOne(applicant);
+  res.send(result);
+})
+// ************member api ***************
+
+app.get('/activity', async (req, res) => {
+  const query = {
+    $or: [
+      { status: "rejected" },
+      { status: "Pending" }
+    ]
+  }
+  const result = await allUsersCollection.find(query).toArray();
   res.send(result);
 })
       // Send a ping to confirm a successful connection
