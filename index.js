@@ -1,17 +1,19 @@
 const express = require('express');
 const cors = require('cors');
+var jwt = require('jsonwebtoken');
 require('dotenv').config();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
+const stripe =require('stripe')(process.env.STRIPE_SECRET_KEY)
 const port = process.env.PORT || 5000;
 
 //middleware
 app.use(cors({
   origin: [
-      "http://localhost:5173",
-      "http://localhost:5174",
-      "https://fitlab-d40a2.web.app",
-      "https://fitlab-d40a2.firebaseapp.com",
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "https://fitlab-d40a2.web.app",
+    "https://fitlab-d40a2.firebaseapp.com",
   ],
   credentials: true,
 }));
@@ -128,7 +130,29 @@ async function run() {
       const query = { _id: new ObjectId(id) };
       const result = await slotsCollection.findOne(query);
       res.send(result);
-  })
+    })
+    // payment related 
+    app.post("/create-payment-intent", async (req, res) => {
+      const { items } = req.body;
+    const amount=parseInt(items * 100);
+      // Create a PaymentIntent with the order amount and currency
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: "usd",
+        payment_method_types: [
+          "card"
+        ],
+        // In the latest version of the API, specifying the `automatic_payment_methods` parameter is optional because Stripe enables its functionality by default.
+        // automatic_payment_methods: {
+        //   enabled: true,
+        // },
+      });
+    
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
+    });
+    
     // ####### collection: "class" related api ######
     app.post('/addClasses', async (req, res) => {
       const addClass = req.body;
@@ -174,6 +198,12 @@ async function run() {
     })
 
 
+    app.get('/admin', async (req, res) => {
+      const userEmail = req.query.email;
+      const query = { roll: 'Admin',email: userEmail }
+      const result = await usersCollection.findOne(query);
+      res.send(result);
+    })
     app.get('/allTrainer', async (req, res) => {
       const query = { status: 'Confirm' }
       const result = await allUsersCollection.find(query).toArray();
@@ -190,7 +220,7 @@ async function run() {
       const query = { email: userEmail };
       const result = await allUsersCollection.findOne(query);
       res.send(result);
-  })
+    })
 
     app.put('/confirm/:id', async (req, res) => {
       const id = req.params.id;
@@ -255,39 +285,47 @@ async function run() {
       const result = await forumCollection.find().sort({ postTime: 1 }).toArray();
       res.send(result);
     })
-// ************newsletter api ***************
+    // ************newsletter api ***************
 
-app.post('/newsletter', async (req, res) => {
-  const applicant = req.body;
-  const result = await subscriberCollection.insertOne(applicant);
-  res.send(result);
-})
-// ************member api ***************
+    app.post('/newsletter', async (req, res) => {
+      const applicant = req.body;
+      const result = await subscriberCollection.insertOne(applicant);
+      res.send(result);
+    })
+    // ************member api ***************
+    app.get('/member', async (req, res) => {
+      const userEmail = req.query.email;
+      // console.log(id)
+      const query = { email: userEmail };
+      const result = await allUsersCollection.findOne(query);
+      res.send(result);
+    })
+    app.get('/activity', async (req, res) => {
+      const query = {
+        $or: [
+          { status: "rejected" },
+          { status: "Pending" }
+        ]
+      }
+      const result = await allUsersCollection.find(query).toArray();
+      res.send(result);
+    })
+//Payment related api
 
-app.get('/activity', async (req, res) => {
-  const query = {
-    $or: [
-      { status: "rejected" },
-      { status: "Pending" }
-    ]
+    // Send a ping to confirm a successful connection
+    await client.db("admin").command({ ping: 1 });
+    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+  } finally {
+    // Ensures that the client will close when you finish/error
+    // await client.close();
   }
-  const result = await allUsersCollection.find(query).toArray();
-  res.send(result);
-})
-      // Send a ping to confirm a successful connection
-      await client.db("admin").command({ ping: 1 });
-      console.log("Pinged your deployment. You successfully connected to MongoDB!");
-    } finally {
-      // Ensures that the client will close when you finish/error
-      // await client.close();
-    }
-  }
+}
 run().catch(console.dir);
 
 
-  app.get('/', (req, res) => {
-    res.send('Fitlab is running.');
-  })
-  app.listen(port, () => {
-    console.log('FitLab is running on port:', port);
-  })
+app.get('/', (req, res) => {
+  res.send('Fitlab is running.');
+})
+app.listen(port, () => {
+  console.log('FitLab is running on port:', port);
+})
