@@ -34,29 +34,59 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    const usersCollection = client.db('FitnessDB').collection('users');
+    // const usersCollection = client.db('FitnessDB').collection('users');
     const allUsersCollection = client.db('FitnessDB').collection('allUsers');
     const classCollection = client.db('FitnessDB').collection('class');
     const slotsCollection = client.db('FitnessDB').collection('slots');
     const forumCollection = client.db('FitnessDB').collection('forum');
     const subscriberCollection = client.db('FitnessDB').collection('subscriber');
-
-
+    const paymentsCollection = client.db('FitnessDB').collection('payments');
+// jwt related api 
+    app.post('/jwt', async (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
+      res.send({ token });
+    })
+ // middlewares 
+ const verifyToken = (req, res, next) => {
+  if (!req.headers.authorization) {
+    return res.status(401).send({ message: 'Unauthorized access' });
+  }
+  const token = req.headers.authorization.split(' ')[1];
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(401).send({ message: 'Unauthorized access' })
+    }
+    console.log(decoded)
+    req.decoded = decoded;
+    next();
+  })
+}
+const verifyAdmin = async (req, res, next) => {
+      const email = req.decoded.email;
+      const query = { email: email };
+      const user = await allUsersCollection.findOne(query);
+      const isAdmin = user?.role === 'admin';
+      if (!isAdmin) {
+        return res.status(403).send({ message: 'forbidden access' });
+      }
+      next();
+    }
     //user related api
     app.post('/users', async (req, res) => {
       const user = req.body;
       //insert email if user doesn't exist
       const query = { email: user.email };
-      const existedUser = await usersCollection.findOne(query);
+      const existedUser = await allUsersCollection.findOne(query);
       if (existedUser) {
         return res.send({ message: 'user already existed', insertedId: null });
       }
-      const result = await usersCollection.insertOne(user);
+      const result = await allUsersCollection.insertOne(user);
       res.send(result);
     })
     app.get('/subscriber', async (req, res) => {
-      const query = { roll: 'subscriber' }
-      const result = await usersCollection.find(query).toArray();
+      const query = { role: 'subscriber' }
+      const result = await subscriberCollection.find(query).toArray();
       res.send(result);
     })
 
@@ -69,7 +99,7 @@ async function run() {
 
     app.get('/trainer/:email', async (req, res) => {
       const userEmail = req.params.email
-      const query = { email: userEmail, roll: 'Trainer' }
+      const query = { email: userEmail, role: 'Trainer' }
       const result = await allUsersCollection.findOne(query);
       res.send(result);
     })
@@ -133,8 +163,8 @@ async function run() {
     })
     // payment related 
     app.post("/create-payment-intent", async (req, res) => {
-      const { items } = req.body;
-    const amount=parseInt(items * 100);
+      const { price } = req.body;
+    const amount=parseInt(price * 100);
       // Create a PaymentIntent with the order amount and currency
       const paymentIntent = await stripe.paymentIntents.create({
         amount: amount,
@@ -198,10 +228,30 @@ async function run() {
     })
 
 
-    app.get('/admin', async (req, res) => {
-      const userEmail = req.query.email;
-      const query = { roll: 'Admin',email: userEmail }
-      const result = await usersCollection.findOne(query);
+    app.get('/admin',verifyToken, async (req, res) => {
+      const email = req.query.email;
+      console.log(req.decoded)
+      if (email !== req.decoded.email) {
+        return res.status(403).send({ message: 'forbidden access' })
+      }
+
+      const query = { email: email };
+      const user = await allUsersCollection.findOne(query);
+      let admin = false;
+      if (user) {
+        admin = user?.role === 'admin';
+      }
+      res.send({ admin });
+    })
+    app.get('/activeUser',verifyToken, async (req, res) => {
+      const email = req.query.email;
+      console.log(req.decoded)
+      if (email !== req.decoded.email) {
+        return res.status(403).send({ message: 'forbidden access' })
+      }
+
+      const query = { email: email };
+      const result = await allUsersCollection.findOne(query);
       res.send(result);
     })
     app.get('/allTrainer', async (req, res) => {
@@ -210,7 +260,7 @@ async function run() {
       res.send(result);
     })
     app.get('/trainers', async (req, res) => {
-      const query = { roll: 'Trainer' }
+      const query = { role: 'Trainer' }
       const result = await allUsersCollection.find(query).toArray();
       res.send(result);
     })
@@ -230,7 +280,7 @@ async function run() {
       const updatedUser = {
         $set: {
           status: updated.status,
-          roll: updated.roll
+          role: updated.role
         }
       }
       const result = await allUsersCollection.updateOne(filter, updatedUser, options);
@@ -244,7 +294,7 @@ async function run() {
       const updatedUser = {
         $set: {
           status: rejectedInfo.status,
-          roll: rejectedInfo.roll,
+          role: rejectedInfo.role,
           feedback: rejectedInfo.feedback
         }
       }
@@ -257,7 +307,7 @@ async function run() {
       const updatedUser = {
         $set: {
           status: 'Removed trainer',
-          roll: 'member',
+          role: 'member',
         }
       }
       const result = await allUsersCollection.updateOne(filter, updatedUser);
@@ -311,7 +361,27 @@ async function run() {
       res.send(result);
     })
 //Payment related api
-
+app.post('/payments', async (req, res) => {
+  const payment = req.body;
+  const paymentResult = await paymentsCollection.insertOne(payment);
+  
+  // update booking count in class collection
+  const update = {
+    $inc: { count: 1 },
+  }
+  const query = { className: payment.uniqueClass }
+  const updateCount = await classCollection.updateOne(query, update)
+  console.log(updateCount)
+  res.send(paymentResult);
+})
+app.get('/payments/:email', verifyToken, async (req, res) => {
+  const query = { email: req.params.email }
+  if (req.params.email !== req.decoded.email) {
+    return res.status(403).send({ message: 'forbidden access' });
+  }
+  const paymentResult = await paymentsCollection.find(query).toArray();
+  res.send(paymentResult);
+})
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
