@@ -335,6 +335,10 @@ const verifyAdmin = async (req, res, next) => {
       const result = await forumCollection.find().sort({ postTime: 1 }).toArray();
       res.send(result);
     })
+    app.get('/featureClasses', async (req, res) => {
+      const result = await classCollection.find().sort({ count: 1 }).toArray();
+      res.send(result);
+    })
     // ************newsletter api ***************
 
     app.post('/newsletter', async (req, res) => {
