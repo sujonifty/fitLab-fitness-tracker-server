@@ -41,6 +41,7 @@ async function run() {
     const forumCollection = client.db('FitnessDB').collection('forum');
     const subscriberCollection = client.db('FitnessDB').collection('subscriber');
     const paymentsCollection = client.db('FitnessDB').collection('payments');
+    const reviewCollection = client.db('FitnessDB').collection('reviews');
 // jwt related api 
     app.post('/jwt', async (req, res) => {
       const user = req.body;
@@ -336,7 +337,7 @@ const verifyAdmin = async (req, res, next) => {
       res.send(result);
     })
     app.get('/featureClasses', async (req, res) => {
-      const result = await classCollection.find().sort({ count: 1 }).toArray();
+      const result = await classCollection.find().sort({ count: -1 }).toArray();
       res.send(result);
     })
     // ************newsletter api ***************
@@ -344,6 +345,17 @@ const verifyAdmin = async (req, res, next) => {
     app.post('/newsletter', async (req, res) => {
       const applicant = req.body;
       const result = await subscriberCollection.insertOne(applicant);
+      res.send(result);
+    })
+    // ************review related api ***************
+
+    app.post('/reviews', async (req, res) => {
+      const review = req.body;
+      const result = await reviewCollection.insertOne(review);
+      res.send(result);
+    })
+    app.get('/reviews', async (req, res) => {
+      const result = await reviewCollection.find().sort({ reviewDate: -1 }).toArray();
       res.send(result);
     })
     // ************member api ***************
@@ -362,6 +374,27 @@ const verifyAdmin = async (req, res, next) => {
         ]
       }
       const result = await allUsersCollection.find(query).toArray();
+      res.send(result);
+    })
+    app.put('/updateProfile/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const updated = req.body;
+      const updatedUser = {
+        $set: {
+          name: updated.name,
+          photo: updated.photo
+        }
+      }
+      const result = await allUsersCollection.updateOne(filter, updatedUser, options);
+      res.send(result);
+    })
+    app.get('/bookedTrainers', async (req, res) => {
+      const userEmail = req.query.email;
+      // console.log(id)
+      const query = { email: userEmail };
+      const result = await paymentsCollection.find(query).toArray();
       res.send(result);
     })
 //Payment related api
